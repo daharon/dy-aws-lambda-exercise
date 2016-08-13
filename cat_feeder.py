@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+from os import path
+import time
 import base64
 import json
 import urllib
@@ -9,10 +11,13 @@ import boto3
 
 print('Loading function')
 
+# Google Compute Vision API Config
 GCV_URL = 'https://vision.googleapis.com/v1/images:annotate?fields=responses&key={}'
 GCV_API_KEY = '######################'
 GCV_LABELS = ['fish', 'milk', 'bread']
 GCV_MIN_SCORE = 0.5
+
+FED_STATUS_FILE = 'fed-status.txt'
 
 s3 = boto3.client('s3')
 
@@ -58,6 +63,14 @@ def _perform_gcv_analysis(b64_encoded_image, api_key):
     return False
 
 
+def _update_fed_status(bucket):
+    """ Save the timestamp of the last feeding in S3. """
+    timestamp = int(time.time())
+    print('Writing {} to {}'.format(timestamp, path.join(bucket, FED_STATUS_FILE)))
+    s3.put_object(Bucket=bucket, Key=FED_STATUS_FILE,
+                  Body=bytes(timestamp))
+
+
 def lambda_handler(event, context):
     print("Received event: " + json.dumps(event, indent=2))
 
@@ -75,9 +88,10 @@ def lambda_handler(event, context):
         is_food = _perform_gcv_analysis(new_food_encoded, GCV_API_KEY)
 
         if is_food:
-            pass
-
+            print('Feeding the cat!')
+            _update_fed_status(bucket)
+        else:
+            print('This aint\'t food! The cat is still hungry!')
     except Exception as e:
         print(e)
-        print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, bucket))
         raise e
