@@ -17,7 +17,7 @@ GCV_API_KEY = '######################'
 GCV_LABELS = ['fish', 'milk', 'bread']
 GCV_MIN_SCORE = 0.5
 
-FED_STATUS_FILE = 'fed-status.txt'
+FED_TIME_FILE = 'fed-time.txt'
 
 s3 = boto3.client('s3')
 
@@ -66,8 +66,8 @@ def _perform_gcv_analysis(b64_encoded_image, api_key):
 def _update_fed_status(bucket):
     """ Save the timestamp of the last feeding in S3. """
     timestamp = int(time.time())
-    print('Writing {} to {}'.format(timestamp, path.join(bucket, FED_STATUS_FILE)))
-    s3.put_object(Bucket=bucket, Key=FED_STATUS_FILE,
+    print('Writing {} to {}'.format(timestamp, path.join(bucket, FED_TIME_FILE)))
+    s3.put_object(Bucket=bucket, Key=FED_TIME_FILE,
                   Body=bytes(timestamp))
 
 
